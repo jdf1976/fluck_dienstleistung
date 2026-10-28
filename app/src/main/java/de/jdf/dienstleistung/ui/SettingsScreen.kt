@@ -60,30 +60,27 @@ fun SettingsScreen() {
         restoreUri = uri
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Backup & Info") }) }) { pad ->
+    Scaffold { pad ->
         Column(
-            Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Column(Modifier.padding(top = 20.dp)) { Text("Backup", style = MaterialTheme.typography.headlineLarge) }
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-            Text("Sicherung", style = MaterialTheme.typography.titleMedium)
+            Text("Sicherung", style = MaterialTheme.typography.titleLarge)
             Text(
                 "Alle Kunden, Aufträge, Zeiten, Notizen, Material, Fotos und Protokolle werden in eine ZIP-Datei gesichert. " +
                     "Speicherort frei wählbar, z. B. Nextcloud, Google Drive oder USB-Stick.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = {
+            BigButton("Sicherung erstellen", {
                 val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm"))
                 exportLauncher.launch("JDF-Backup_$ts.zip")
-            }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Download, null); Text("  Sicherung erstellen")
-            }
-            OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
-                enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Upload, null); Text("  Sicherung wiederherstellen")
-            }
+            }, Modifier.fillMaxWidth(), icon = Icons.Default.Download, enabled = !busy)
+            BigButton("Sicherung wiederherstellen", { importLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
+                Modifier.fillMaxWidth(), icon = Icons.Default.Upload, style = BtnStyle.Outline, height = 56.dp, enabled = !busy)
 
-            Text("Info", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+            Text("Info", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 16.dp))
             Text("Version ${BuildConfigInfo.versionName(ctx)}", style = MaterialTheme.typography.bodyMedium)
             Text("Alle Daten liegen nur lokal auf diesem Gerät. Regelmäßig sichern!", style = MaterialTheme.typography.bodySmall)
         }

@@ -124,7 +124,7 @@ fun JobEditScreen(
 
             OutlinedTextField(location, { location = it }, m, label = { Text("Einsatzort (falls abweichend)") }, singleLine = true)
             OutlinedTextField(description, { description = it }, m, label = { Text("Beschreibung") }, minLines = 4)
-            Button(onClick = { save() }, enabled = title.isNotBlank(), modifier = m) { Text("Speichern") }
+            BigButton("Speichern", { save() }, m, enabled = title.isNotBlank())
         }
     }
 }

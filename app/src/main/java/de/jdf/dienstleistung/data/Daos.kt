@@ -76,6 +76,10 @@ interface TimeEntryDao {
     @Query("SELECT * FROM time_entries WHERE jobId = :jobId ORDER BY date DESC, startMinutes DESC")
     fun forJob(jobId: Long): Flow<List<TimeEntry>>
 
+    /** Netto-Minuten im Zeitraum (Epoch-Days, inklusive). */
+    @Query("SELECT COALESCE(SUM(endMinutes - startMinutes - breakMinutes), 0) FROM time_entries WHERE date BETWEEN :from AND :to")
+    fun minutesBetween(from: Long, to: Long): Flow<Int>
+
     @Upsert
     suspend fun upsert(entry: TimeEntry): Long
 

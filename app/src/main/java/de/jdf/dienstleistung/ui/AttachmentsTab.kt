@@ -66,9 +66,6 @@ fun AttachmentsTab(jobId: Long, kind: AttachmentKind) {
     val list by remember(jobId, kind) { db.attachments().forJob(jobId, kind) }.collectAsState(initial = emptyList())
     var selected by remember { mutableStateOf<Attachment?>(null) }
 
-    // Pfad der gerade laufenden Kameraaufnahme (überlebt Rotation/Prozess-Neustart)
-    var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
-
     suspend fun addImported(uris: List<android.net.Uri>) {
         uris.forEach { uri ->
             runCatching { a.files.import(uri) }
@@ -83,21 +80,7 @@ fun AttachmentsTab(jobId: Long, kind: AttachmentKind) {
         if (uris.isNotEmpty()) db.jobs().touch(jobId)
     }
 
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val path = pendingPhoto ?: return@rememberLauncherForActivityResult
-        pendingPhoto = null
-        val f = File(path)
-        scope.launch {
-            if (ok && f.length() > 0) {
-                val label = if (kind == AttachmentKind.PHOTO) "Foto" else "Protokoll (Foto)"
-                db.attachments().insert(
-                    Attachment(jobId = jobId, kind = kind, fileName = f.name,
-                        displayName = "$label ${formatMillis(System.currentTimeMillis())}", mimeType = "image/jpeg")
-                )
-                db.jobs().touch(jobId)
-            } else f.delete()
-        }
-    }
+    val takePhoto = rememberPhotoCapture(jobId, kind)
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
         scope.launch { addImported(uris) }
     }
@@ -105,25 +88,16 @@ fun AttachmentsTab(jobId: Long, kind: AttachmentKind) {
         scope.launch { addImported(uris) }
     }
 
-    fun takePhoto() {
-        val f = a.files.newPhotoFile()
-        pendingPhoto = f.absolutePath
-        camera.launch(a.files.uriFor(f.name))
-    }
-
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(16.dp, 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { takePhoto() }, Modifier.weight(1f)) {
-                Icon(Icons.Default.PhotoCamera, null); Text(if (kind == AttachmentKind.PHOTO) "  Kamera" else "  Abfotografieren")
-            }
+        Row(Modifier.fillMaxWidth().padding(16.dp, 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            BigButton(if (kind == AttachmentKind.PHOTO) "Kamera" else "Abfotografieren", takePhoto,
+                Modifier.weight(1f), icon = Icons.Default.PhotoCamera, height = 56.dp)
             if (kind == AttachmentKind.PHOTO) {
-                OutlinedButton(onClick = {
-                    gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }, Modifier.weight(1f)) { Icon(Icons.Default.Image, null); Text("  Galerie") }
+                BigButton("Galerie", { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    Modifier.weight(1f), icon = Icons.Default.Image, style = BtnStyle.Outline, height = 56.dp)
             } else {
-                OutlinedButton(onClick = {
-                    documents.launch(arrayOf("application/pdf", "image/*", "text/*", "application/*"))
-                }, Modifier.weight(1f)) { Icon(Icons.Default.UploadFile, null); Text("  Datei / PDF") }
+                BigButton("PDF / Datei", { documents.launch(arrayOf("application/pdf", "image/*", "text/*", "application/*")) },
+                    Modifier.weight(1f), icon = Icons.Default.UploadFile, style = BtnStyle.Outline, height = 56.dp)
             }
         }
 
@@ -180,6 +154,37 @@ fun AttachmentsTab(jobId: Long, kind: AttachmentKind) {
     }
 
     selected?.let { AttachmentDialog(it) { selected = null } }
+}
+
+/** Kamera öffnen und das Foto direkt dem Auftrag zuordnen. */
+@Composable
+fun rememberPhotoCapture(jobId: Long, kind: AttachmentKind = AttachmentKind.PHOTO): () -> Unit {
+    val a = app()
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // Pfad der gerade laufenden Aufnahme (überlebt Rotation/Prozess-Neustart)
+    var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val path = pendingPhoto ?: return@rememberLauncherForActivityResult
+        pendingPhoto = null
+        val f = File(path)
+        scope.launch {
+            if (ok && f.length() > 0) {
+                val label = if (kind == AttachmentKind.PHOTO) "Foto" else "Protokoll (Foto)"
+                a.db.attachments().insert(
+                    Attachment(jobId = jobId, kind = kind, fileName = f.name,
+                        displayName = "$label ${formatMillis(System.currentTimeMillis())}", mimeType = "image/jpeg")
+                )
+                a.db.jobs().touch(jobId)
+                Toast.makeText(ctx, "$label gespeichert", Toast.LENGTH_SHORT).show()
+            } else f.delete()
+        }
+    }
+    return {
+        val f = a.files.newPhotoFile()
+        pendingPhoto = f.absolutePath
+        camera.launch(a.files.uriFor(f.name))
+    }
 }
 
 @Composable

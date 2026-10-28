@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -67,28 +68,31 @@ fun CustomerListScreen(onOpen: (Long) -> Unit, onNew: () -> Unit) {
         query.isBlank() || listOf(it.name, it.zipCity, it.street, it.phone).any { f -> f.contains(query.trim(), true) }
     }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Kunden") }) },
-        floatingActionButton = { FloatingActionButton(onClick = onNew) { Icon(Icons.Default.Add, "Neuer Kunde") } },
-    ) { pad ->
+    Scaffold { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
-            OutlinedTextField(
-                value = query, onValueChange = { query = it },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                placeholder = { Text("Suchen …") }, singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(16.dp, 0.dp, 16.dp, 8.dp),
-            )
+            PageTitle("Kunden") {
+                androidx.compose.material3.FilledIconButton(
+                    onClick = onNew, modifier = Modifier.size(56.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(containerColor = SignalYellow, contentColor = Navy),
+                ) { Icon(Icons.Default.Add, "Neuer Kunde", Modifier.size(30.dp)) }
+            }
+            SearchField(query, { query = it }, "Name, Ort, Telefon …")
             if (shown.isEmpty()) {
                 EmptyHint(if (customers.isEmpty()) "Noch keine Kunden.\nMit + einen anlegen." else "Keine Treffer.")
             } else {
-                LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) {
+                LazyColumn(
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     items(shown, key = { it.id }) { c ->
-                        ListItem(
-                            headlineContent = { Text(c.name) },
-                            supportingContent = { if (c.address.isNotBlank()) Text(c.address) },
-                            modifier = Modifier.clickable { onOpen(c.id) },
-                        )
-                        HorizontalDivider()
+                        AppCard(Modifier.fillMaxWidth(), onClick = { onOpen(c.id) }) {
+                            Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
+                                Text(c.name, style = MaterialTheme.typography.titleMedium)
+                                if (c.address.isNotBlank()) Text(c.address, style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
@@ -123,7 +127,8 @@ fun CustomerDetailScreen(
             ExtendedFloatingActionButton(
                 onClick = { onNewJob(customerId) },
                 icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("Auftrag") },
+                text = { Text("Auftrag", style = MaterialTheme.typography.labelLarge) },
+                containerColor = SignalYellow, contentColor = Navy,
             )
         },
     ) { pad ->
@@ -134,8 +139,8 @@ fun CustomerDetailScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                AppCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (c.street.isNotBlank()) Text(c.street)
                         if (c.zipCity.isNotBlank()) Text(c.zipCity)
                         if (c.phone.isNotBlank()) Text("Tel: ${c.phone}")
@@ -145,19 +150,19 @@ fun CustomerDetailScreen(
                 }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (c.phone.isNotBlank()) OutlinedButton(onClick = {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (c.phone.isNotBlank()) BigButton("Anrufen", {
                         ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${c.phone}")))
-                    }) { Icon(Icons.Default.Call, null); Text(" Anrufen") }
-                    if (c.address.isNotBlank()) OutlinedButton(onClick = {
+                    }, Modifier.weight(1f), icon = Icons.Default.Call, style = BtnStyle.Outline, height = 52.dp)
+                    if (c.address.isNotBlank()) BigButton("Route", {
                         ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(c.address))))
-                    }) { Icon(Icons.Default.Directions, null); Text(" Route") }
-                    if (c.email.isNotBlank()) OutlinedButton(onClick = {
+                    }, Modifier.weight(1f), icon = Icons.Default.Directions, style = BtnStyle.Outline, height = 52.dp)
+                    if (c.email.isNotBlank()) BigButton("", {
                         ctx.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${c.email}")))
-                    }) { Icon(Icons.Default.Email, null) }
+                    }, icon = Icons.Default.Email, style = BtnStyle.Outline, height = 52.dp)
                 }
             }
-            item { Text("Aufträge (${jobs.size})", style = MaterialTheme.typography.titleMedium) }
+            item { Text("Aufträge (${jobs.size})", style = MaterialTheme.typography.titleLarge) }
             items(jobs, key = { it.job.id }) { JobCard(it) { onOpenJob(it.job.id) } }
         }
     }
@@ -218,7 +223,7 @@ fun CustomerEditScreen(customerId: Long, onDone: () -> Unit, onBack: () -> Unit)
             OutlinedTextField(email, { email = it }, m, label = { Text("E-Mail") }, singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
             OutlinedTextField(notes, { notes = it }, m, label = { Text("Notizen") }, minLines = 3)
-            Button(onClick = { save() }, enabled = name.isNotBlank(), modifier = m) { Text("Speichern") }
+            BigButton("Speichern", { save() }, m, enabled = name.isNotBlank())
         }
     }
 }
