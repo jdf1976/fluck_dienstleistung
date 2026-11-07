@@ -116,6 +116,9 @@ interface MaterialDao {
     @Query("SELECT * FROM materials WHERE jobId = :jobId ORDER BY id")
     fun forJob(jobId: Long): Flow<List<Material>>
 
+    @Query("SELECT * FROM materials WHERE jobId = :jobId AND name = :name AND unit = :unit LIMIT 1")
+    suspend fun find(jobId: Long, name: String, unit: String): Material?
+
     @Upsert
     suspend fun upsert(material: Material): Long
 

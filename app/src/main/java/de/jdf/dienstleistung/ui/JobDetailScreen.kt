@@ -396,6 +396,8 @@ private fun NotesTab(jobId: Long, onEdit: (Note) -> Unit) {
 @Composable
 private fun MaterialsTab(jobId: Long, onEdit: (Material) -> Unit) {
     val db = app().db
+    val scope = rememberCoroutineScope()
+    var toDelete by remember { mutableStateOf<Material?>(null) }
     val mats by remember(jobId) { db.materials().forJob(jobId) }.collectAsState(initial = emptyList())
     LazyColumn(contentPadding = PaddingValues(20.dp, 16.dp, 20.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { MaterialQuickCount(jobId) }
@@ -413,8 +415,15 @@ private fun MaterialsTab(jobId: Long, onEdit: (Material) -> Unit) {
                         if (m.note.isNotBlank()) Text(m.note, style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    IconButton(onClick = { toDelete = m }, modifier = Modifier.size(52.dp)) {
+                        Icon(Icons.Default.Delete, "${m.name} löschen", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
+    }
+    toDelete?.let { m ->
+        ConfirmDialog("Position löschen?", "${formatQty(m.quantity)} ${m.unit} ${m.name} wird aus der Materialliste entfernt.",
+            onConfirm = { scope.launch { db.materials().delete(m) } }, onDismiss = { toDelete = null })
     }
 }

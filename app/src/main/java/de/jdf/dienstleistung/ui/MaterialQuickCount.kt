@@ -34,7 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import de.jdf.dienstleistung.data.Note
+import de.jdf.dienstleistung.data.Material
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.time.LocalDateTime
@@ -64,7 +64,8 @@ private class CountStore(context: Context) {
 
 /**
  * Baustellen-Durchgang: jeder Tipp auf einen Artikel zählt eins hoch.
- * „Fertig“ schreibt die Liste als Notiz in den Auftrag und setzt die Zähler zurück.
+ * „Fertig“ übernimmt die Mengen in die Materialliste (gleiche Artikel werden addiert)
+ * und setzt die Zähler zurück.
  */
 @Composable
 fun MaterialQuickCount(jobId: Long) {
@@ -87,7 +88,7 @@ fun MaterialQuickCount(jobId: Long) {
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Schnellzählen", style = MaterialTheme.typography.titleLarge)
-        Text("Antippen zählt +1. Mit „–“ korrigieren.", style = MaterialTheme.typography.bodyMedium,
+        Text("Antippen zählt +1, „–“ nimmt eins weg.", style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         QUICK_ITEMS.chunked(2).forEach { row ->
@@ -101,18 +102,21 @@ fun MaterialQuickCount(jobId: Long) {
         }
 
         BigButton(
-            if (total > 0) "Fertig – $total Teile als Notiz" else "Fertig – als Notiz speichern",
+            if (total > 0) "Fertig – $total Teile in Materialliste" else "Fertig – in Materialliste übernehmen",
             onClick = {
-                val lines = QUICK_ITEMS.mapNotNull { n -> counts[n]?.takeIf { it > 0 }?.let { "$it × $n" } }
-                val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
-                val text = "Material-Zählung $stamp\n" + lines.joinToString("\n")
+                val picked = QUICK_ITEMS.mapNotNull { n -> counts[n]?.takeIf { it > 0 }?.let { n to it } }
                 scope.launch {
-                    a.db.notes().upsert(Note(jobId = jobId, text = text))
+                    val dao = a.db.materials()
+                    picked.forEach { (name, n) ->
+                        val existing = dao.find(jobId, name, "Stk")
+                        if (existing != null) dao.upsert(existing.copy(quantity = existing.quantity + n))
+                        else dao.upsert(Material(jobId = jobId, name = name, quantity = n.toDouble(), unit = "Stk"))
+                    }
                     a.db.jobs().touch(jobId)
                     counts = emptyMap()
                     store.save(jobId, counts)
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(ctx, "Notiz mit ${lines.size} Positionen gespeichert", Toast.LENGTH_LONG).show()
+                    Toast.makeText(ctx, "${picked.size} Positionen in die Materialliste übernommen", Toast.LENGTH_LONG).show()
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -140,20 +144,25 @@ private fun CountTile(name: String, count: Int, modifier: Modifier, onPlus: () -
     val active = count > 0
     Surface(
         onClick = onPlus,
-        modifier = modifier.height(76.dp),
+        modifier = modifier.height(80.dp),
         shape = RoundedCornerShape(20.dp),
         color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
         contentColor = if (active) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(if (active) 2.dp else 1.dp,
             if (active) SignalYellow else MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(Modifier.padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+        Row(Modifier.padding(start = 6.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Immer sichtbar, damit man Fehltipps sofort zurücknehmen kann
+            androidx.compose.material3.FilledTonalIconButton(
+                onClick = onMinus, enabled = active, modifier = Modifier.size(52.dp),
+                colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) { Icon(Icons.Default.Remove, "$name eins weniger", Modifier.size(28.dp)) }
+            Column(Modifier.weight(1f).padding(start = 8.dp), horizontalAlignment = Alignment.End) {
                 Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(count.toString(), style = MaterialTheme.typography.headlineSmall)
-            }
-            if (active) IconButton(onClick = onMinus, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.Default.Remove, "$name eins weniger")
             }
         }
     }
