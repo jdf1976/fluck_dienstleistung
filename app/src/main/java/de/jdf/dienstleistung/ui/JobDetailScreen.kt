@@ -397,8 +397,13 @@ private fun NotesTab(jobId: Long, onEdit: (Note) -> Unit) {
 private fun MaterialsTab(jobId: Long, onEdit: (Material) -> Unit) {
     val db = app().db
     val mats by remember(jobId) { db.materials().forJob(jobId) }.collectAsState(initial = emptyList())
-    if (mats.isEmpty()) return EmptyHint("Noch kein Material erfasst.")
     LazyColumn(contentPadding = PaddingValues(20.dp, 16.dp, 20.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item { MaterialQuickCount(jobId) }
+        item {
+            Text("Materialliste", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
+            if (mats.isEmpty()) Text("Noch keine Positionen. Über „+ Material“ einzeln erfassen.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         items(mats, key = { it.id }) { m ->
             AppCard(Modifier.fillMaxWidth(), onClick = { onEdit(m) }) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
