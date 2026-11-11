@@ -62,8 +62,14 @@ import org.json.JSONObject
 
 /** Start-Artikel der Zählknöpfe; eigene kommen dazu und bleiben gespeichert. */
 private val DEFAULT_ITEMS = listOf(
-    "Steckdosen", "Schalter", "Taster", "Schalterwippen", "Serienschalter", "Kreuzschalter",
+    "Steckdosen", "Schalter", "Wechselschalter", "Taster", "Schalterwippen", "Serienschalter", "Kreuzschalter",
     "Einfachrahmen", "Zweifachrahmen", "Dreifachrahmen", "Vierfachrahmen", "Fünffachrahmen",
+    "Abzweigdosen", "Herdanschlussdosen", "Netzwerkdosen einfach", "Netzwerkdosen doppelt", "TV-Dosen",
+)
+
+/** Mit Version 2 neu dazugekommen – werden bestehenden Listen einmalig angehängt. */
+private val ADDED_V2 = listOf(
+    "Wechselschalter", "Abzweigdosen", "Herdanschlussdosen", "Netzwerkdosen einfach", "Netzwerkdosen doppelt", "TV-Dosen",
 )
 
 /** Artikelliste (für alle Aufträge) und Zählerstände je Auftrag. */
@@ -73,11 +79,16 @@ private class CountStore(context: Context) {
     fun items(): List<String> {
         val raw = prefs.getString("items", null) ?: return DEFAULT_ITEMS
         val arr = JSONArray(raw)
-        return List(arr.length()) { arr.getString(it) }
+        val list = List(arr.length()) { arr.getString(it) }
+        if (prefs.getInt("defaultsVersion", 1) >= 2) return list
+        val merged = list + ADDED_V2.filter { add -> list.none { it.equals(add, ignoreCase = true) } }
+        saveItems(merged)
+        prefs.edit().putInt("defaultsVersion", 2).apply()
+        return merged
     }
 
     fun saveItems(items: List<String>) {
-        prefs.edit().putString("items", JSONArray(items).toString()).apply()
+        prefs.edit().putString("items", JSONArray(items).toString()).putInt("defaultsVersion", 2).apply()
     }
 
     fun load(jobId: Long): Map<String, Int> {
