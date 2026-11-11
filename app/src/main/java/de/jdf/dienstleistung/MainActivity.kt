@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -30,6 +31,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import de.jdf.dienstleistung.data.ThemeMode
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -60,7 +68,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { AppTheme { AppNav() } }
+        setContent {
+            val mode by (application as App).settings.themeMode.collectAsState()
+            val dark = when (mode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            // Symbole der Statusleiste passend zum gewählten Design
+            val view = LocalView.current
+            SideEffect {
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
+            AppTheme(dark) { AppNav() }
+        }
     }
 }
 
@@ -68,7 +92,7 @@ private enum class Tab(val route: String, val label: String, val icon: ImageVect
     TODAY("today", "Heute", Icons.Default.Home),
     JOBS("jobs", "Aufträge", Icons.Default.Assignment),
     CUSTOMERS("customers", "Kunden", Icons.Default.People),
-    SETTINGS("settings", "Backup", Icons.Default.CloudUpload),
+    SETTINGS("settings", "Mehr", Icons.Default.Tune),
 }
 
 private fun NavHostController.switchTab(route: String) = navigate(route) {
@@ -105,7 +129,8 @@ private fun AppNav() {
                 if (timer != null && route != Tab.TODAY.route) {
                     MiniTimerBar(timer, onOpen = { nav.switchTab(Tab.TODAY.route) }, onStop = timerActions.stop)
                 }
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.route,

@@ -24,6 +24,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +70,14 @@ fun SettingsScreen() {
             Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.padding(top = 20.dp)) { Text("Backup", style = MaterialTheme.typography.headlineLarge) }
+            Column(Modifier.padding(top = 20.dp)) { Text("Mehr", style = MaterialTheme.typography.headlineLarge) }
+
+            Text("Darstellung", style = MaterialTheme.typography.titleLarge)
+            ThemeSwitch()
+            Text("„System“ folgt der Einstellung des Handys. Draußen in der Sonne ist „Hell“ am besten lesbar.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            androidx.compose.material3.HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             Text("Sicherung", style = MaterialTheme.typography.titleLarge)
             Text(
@@ -105,5 +117,35 @@ fun SettingsScreen() {
             },
             dismissButton = { TextButton(onClick = { restoreUri = null }) { Text("Abbrechen") } },
         )
+    }
+}
+
+
+/** Umschalter System / Hell / Dunkel. */
+@Composable
+fun ThemeSwitch() {
+    val settings = app().settings
+    val mode by settings.themeMode.collectAsState()
+    Row(
+        Modifier.fillMaxWidth().height(56.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest, androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        de.jdf.dienstleistung.data.ThemeMode.entries.forEach { m ->
+            val on = m == mode
+            androidx.compose.material3.Surface(
+                onClick = { settings.setThemeMode(m) },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                color = if (on) MaterialTheme.colorScheme.background else androidx.compose.ui.graphics.Color.Transparent,
+                shadowElevation = if (on) 2.dp else 0.dp,
+            ) {
+                androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Text(m.label, style = MaterialTheme.typography.labelLarge,
+                        color = if (on) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }

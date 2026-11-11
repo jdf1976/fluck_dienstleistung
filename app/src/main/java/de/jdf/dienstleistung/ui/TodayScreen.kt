@@ -5,23 +5,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,12 +33,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.jdf.dienstleistung.data.JobListItem
 import de.jdf.dienstleistung.data.JobStatus
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.IsoFields
 import java.time.temporal.TemporalAdjusters
+import java.util.Locale
 
 private val openOrder = listOf(JobStatus.IN_PROGRESS, JobStatus.PLANNED, JobStatus.REQUEST)
 
@@ -58,63 +64,62 @@ fun TodayScreen(onOpenJob: (Long) -> Unit, onShowJobs: () -> Unit, onNewJob: () 
     var picker by remember { mutableStateOf(false) }
 
     val open = openJobs(jobs)
+    val working = open.filter { it.job.status == JobStatus.IN_PROGRESS }
+    val rest = open.filter { it.job.status != JobStatus.IN_PROGRESS }
     val suggested = open.firstOrNull()
 
-    Scaffold { pad ->
-        LazyColumn(
-            Modifier.padding(pad),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                Column(Modifier.padding(top = 20.dp)) {
-                    Text(formatLongDate(today), style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Heute", style = MaterialTheme.typography.headlineLarge)
-                }
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNewJob, containerColor = SignalYellow, contentColor = Navy,
+                shape = RoundedCornerShape(20.dp), modifier = Modifier.size(64.dp)) {
+                Icon(Icons.Default.Add, "Neuer Auftrag", Modifier.size(30.dp))
             }
-
+        },
+    ) { pad ->
+        LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 96.dp)) {
             item {
-                if (timer != null) {
-                    RunningCard(timer.jobTitle, jobs.firstOrNull { it.job.id == timer.jobId }, timer.startedAt,
-                        onOpen = { onOpenJob(timer.jobId) }, onStop = actions.stop)
-                } else {
-                    AppCard(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(Icons.Default.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(if (suggested != null) "Kein Timer aktiv · Vorschlag" else "Kein Timer aktiv",
-                                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            if (suggested != null) {
-                                Column {
-                                    Text(suggested.job.title, style = MaterialTheme.typography.titleLarge)
-                                    Text(listOfNotNull(suggested.customerName, suggested.job.location.ifBlank { null }).joinToString(" · "),
-                                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                BigButton("Arbeit starten", { actions.start(suggested.job.id) }, Modifier.fillMaxWidth(),
-                                    icon = Icons.Default.PlayArrow)
-                                BigButton("Anderer Auftrag …", { picker = true }, Modifier.fillMaxWidth(),
-                                    style = BtnStyle.Outline, height = 52.dp)
-                            } else {
-                                Text("Noch keine offenen Aufträge.", style = MaterialTheme.typography.bodyLarge)
-                                BigButton("Auftrag anlegen", onNewJob, Modifier.fillMaxWidth(), icon = Icons.Default.Add)
-                            }
-                        }
+                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.Bottom) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            today.format(DateTimeFormatter.ofPattern("EE, d. MMM", Locale.GERMAN)) +
+                                " · KW ${today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)}",
+                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text("Heute", style = MaterialTheme.typography.headlineLarge)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(formatDuration(weekMinutes), style = MaterialTheme.typography.titleLarge)
+                        Text("diese Woche", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
 
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatTile("Diese Woche", formatDuration(weekMinutes), Modifier.weight(1f))
-                    StatTile("Offene Aufträge", open.size.toString(), Modifier.weight(1f), onClick = onShowJobs)
+                if (timer != null) {
+                    TimerStrip(timer.jobTitle, timer.startedAt, onOpen = { onOpenJob(timer.jobId) }, onStop = actions.stop)
+                } else if (suggested != null) {
+                    IdleStrip(suggested, onStart = { actions.start(suggested.job.id) }, onOther = { picker = true })
                 }
             }
 
-            if (open.isNotEmpty()) {
-                item { Text("Als Nächstes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 4.dp)) }
-                items(open.take(4), key = { it.job.id }) { JobCard(it) { onOpenJob(it.job.id) } }
+            if (working.isNotEmpty()) {
+                item { SectionLabel("In Arbeit · ${working.size}") }
+                items(working, key = { it.job.id }) { JobRow(it) { onOpenJob(it.job.id) } }
+            }
+            if (rest.isNotEmpty()) {
+                item {
+                    SectionLabel("Offen · ${rest.size}") {
+                        TextButton(onClick = onShowJobs, modifier = Modifier.height(40.dp)) { Text("Alle") }
+                    }
+                }
+                items(rest.take(8), key = { it.job.id }) { JobRow(it) { onOpenJob(it.job.id) } }
+            }
+            if (open.isEmpty()) {
+                item {
+                    Text("Keine offenen Aufträge. Mit + einen neuen anlegen.", Modifier.padding(20.dp),
+                        style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
@@ -122,37 +127,50 @@ fun TodayScreen(onOpenJob: (Long) -> Unit, onShowJobs: () -> Unit, onNewJob: () 
     if (picker) JobPickerSheet(open, onPick = { picker = false; actions.start(it) }, onDismiss = { picker = false })
 }
 
+/** Laufender Timer als kompakter Streifen. */
 @Composable
-private fun RunningCard(title: String, item: JobListItem?, startedAt: Long, onOpen: () -> Unit, onStop: () -> Unit) {
+private fun TimerStrip(title: String, startedAt: Long, onOpen: () -> Unit, onStop: () -> Unit) {
     val now = rememberNow(true)
-    val started = java.time.Instant.ofEpochMilli(startedAt).atZone(java.time.ZoneId.systemDefault())
-    Card(
-        onClick = onOpen,
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Navy, contentColor = Color.White),
-        modifier = Modifier.fillMaxWidth(),
+    Surface(
+        onClick = onOpen, shape = RoundedCornerShape(18.dp), color = Navy, contentColor = Color.White,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
     ) {
-        Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LiveDot()
-                Text("Läuft seit %02d:%02d Uhr".format(started.hour, started.minute),
-                    style = MaterialTheme.typography.labelMedium, color = Color(0xFFC9D6E8))
+        Row(Modifier.padding(start = 18.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LiveDot()
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyMedium, color = Color(0xFFC9D6E8),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(formatStopwatch((now - startedAt) / 1000), style = MaterialTheme.typography.headlineMedium)
             }
-            Column {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                val sub = listOfNotNull(item?.customerName, item?.job?.location?.ifBlank { null }).joinToString(" · ")
-                if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color(0xFFC9D6E8))
+            Button(onClick = onStop, modifier = Modifier.height(56.dp), shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy)) {
+                Icon(Icons.Default.Stop, null); Text(" Stopp", style = MaterialTheme.typography.titleSmall)
             }
-            Text(formatStopwatch((now - startedAt) / 1000), style = MaterialTheme.typography.displaySmall)
-            Button(
-                onClick = onStop,
-                modifier = Modifier.fillMaxWidth().padding(top = 2.dp).then(Modifier),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Navy),
-                contentPadding = PaddingValues(vertical = 20.dp),
-            ) {
-                Icon(Icons.Default.Stop, null); Text("  Stopp & speichern", style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+/** Kein Timer: Vorschlag mit Start-Knopf. */
+@Composable
+private fun IdleStrip(suggested: JobListItem, onStart: () -> Unit, onOther: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
+    ) {
+        Column(Modifier.padding(start = 18.dp, end = 10.dp, top = 12.dp, bottom = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("Kein Timer · Vorschlag", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(suggested.job.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                Button(onClick = onStart, modifier = Modifier.height(56.dp), shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy)) {
+                    Icon(Icons.Default.PlayArrow, null); Text(" Start", style = MaterialTheme.typography.titleSmall)
+                }
             }
+            TextButton(onClick = onOther, modifier = Modifier.height(44.dp)) { Text("Anderen Auftrag wählen …") }
         }
     }
 }

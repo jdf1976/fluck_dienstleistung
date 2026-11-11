@@ -18,10 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -135,13 +133,16 @@ fun QuickCountScreen(jobId: Long, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             BackTopBar("Schnellzählung", onBack) {
+                TextButton(onClick = { adding = true }, modifier = Modifier.height(48.dp)) {
+                    Text("+ Artikel", style = MaterialTheme.typography.labelLarge)
+                }
                 if (total > 0) TextButton(onClick = { confirmReset = true }, modifier = Modifier.height(48.dp)) {
                     Text("Auf 0", style = MaterialTheme.typography.labelLarge)
                 }
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 8.dp) {
+            Surface(color = MaterialTheme.colorScheme.background) {
                 BigButton(
                     if (total > 0) "Übernehmen: $positions Pos. / $total Stk" else "Zum Zählen Artikel antippen",
                     onClick = {
@@ -161,47 +162,35 @@ fun QuickCountScreen(jobId: Long, onBack: () -> Unit) {
                             onBack()
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp, 12.dp),
+                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(14.dp, 12.dp),
                     icon = Icons.Default.Check,
                     enabled = total > 0,
                 )
             }
         },
     ) { pad ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.padding(pad).fillMaxSize(),
-            contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(span = { GridItemSpan(2) }) {
-                Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
-                    job?.let { Text(it.title, style = MaterialTheme.typography.titleLarge) }
-                    Text("Antippen = +1 · „–“ = eins weniger · lange drücken = Artikel entfernen",
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val groups = articles.groupBy { groupOf(it) }
+        LazyColumn(Modifier.padding(pad).fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+            item {
+                Column(Modifier.padding(horizontal = 20.dp)) {
+                    job?.let { Text(it.title, style = MaterialTheme.typography.titleMedium) }
+                    Text("+ zählt hoch, – zählt runter · Name lange drücken = Artikel entfernen",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            items(articles, key = { it }) { name ->
-                CountTile(
-                    name = name, count = counts[name] ?: 0,
-                    onPlus = { change(name, +1) }, onMinus = { change(name, -1) },
-                    onLongPress = { removing = name },
-                )
+            GROUP_ORDER.forEach { g ->
+                val list = groups[g].orEmpty()
+                if (list.isNotEmpty()) {
+                    item(key = "h_$g") { SectionLabel(g) }
+                    items(list, key = { it }) { name ->
+                        CountRow(name, counts[name] ?: 0,
+                            onPlus = { change(name, +1) }, onMinus = { change(name, -1) }, onLongPress = { removing = name })
+                    }
+                }
             }
             item {
-                // Neues Feld anlegen
-                Box(
-                    Modifier.height(132.dp).clip(RoundedCornerShape(24.dp))
-                        .border(BorderStroke(2.dp, MaterialTheme.colorScheme.outline), RoundedCornerShape(24.dp))
-                        .combinedClickable(onClick = { adding = true }),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Add, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
-                        Text("Artikel\nhinzufügen", style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.primary)
-                    }
+                TextButton(onClick = { adding = true }, modifier = Modifier.padding(start = 8.dp, top = 8.dp).height(52.dp)) {
+                    Icon(Icons.Default.Add, null); Text(" Artikel hinzufügen", style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -240,40 +229,55 @@ fun QuickCountScreen(jobId: Long, onBack: () -> Unit) {
     )
 }
 
+private val GROUP_ORDER = listOf("Schalter & Taster", "Dosen", "Rahmen", "Weitere")
+
+private fun groupOf(name: String): String {
+    val n = name.lowercase()
+    return when {
+        "rahmen" in n -> "Rahmen"
+        "dose" in n -> "Dosen"
+        "schalter" in n || "taster" in n || "wippe" in n -> "Schalter & Taster"
+        else -> "Weitere"
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CountTile(name: String, count: Int, onPlus: () -> Unit, onMinus: () -> Unit, onLongPress: () -> Unit) {
+private fun CountRow(name: String, count: Int, onPlus: () -> Unit, onMinus: () -> Unit, onLongPress: () -> Unit) {
     val active = count > 0
-    val shape = RoundedCornerShape(24.dp)
-    Box(
-        Modifier.height(132.dp).clip(shape)
-            .background(if (active) SignalYellow else MaterialTheme.colorScheme.surfaceContainerHighest)
-            .border(BorderStroke(1.dp, if (active) SignalYellow else MaterialTheme.colorScheme.outlineVariant), shape)
-            .combinedClickable(onClick = onPlus, onLongClick = onLongPress),
-    ) {
-        Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.SpaceBetween) {
+    val dark = LocalIsDark.current
+    Column(Modifier.fillMaxWidth().background(
+        if (!active) MaterialTheme.colorScheme.background else if (dark) androidx.compose.ui.graphics.Color(0xFF2A2410)
+        else androidx.compose.ui.graphics.Color(0xFFFFF8E1))) {
+        Row(Modifier.fillMaxWidth().height(68.dp).padding(start = 20.dp, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                color = if (active) Navy else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(end = 4.dp),
+                modifier = Modifier.weight(1f).combinedClickable(onClick = onPlus, onLongClick = onLongPress),
             )
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Text(
-                    count.toString(),
-                    style = MaterialTheme.typography.displaySmall,
-                    color = if (active) Navy else MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.weight(1f),
-                )
-                FilledTonalIconButton(
-                    onClick = onMinus, enabled = active, modifier = Modifier.size(52.dp),
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = Navy, contentColor = SignalYellow,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        disabledContentColor = MaterialTheme.colorScheme.outline,
-                    ),
-                ) { Icon(Icons.Default.Remove, "$name eins weniger", Modifier.size(28.dp)) }
+            Surface(
+                onClick = onMinus, enabled = active, modifier = Modifier.size(48.dp), shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.primary,
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Remove, "$name eins weniger", Modifier.size(26.dp),
+                        tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+                }
+            }
+            Text(
+                count.toString(), modifier = Modifier.size(width = 52.dp, height = 40.dp),
+                style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center,
+                color = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+            )
+            Surface(
+                onClick = onPlus, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(14.dp),
+                color = Navy, contentColor = SignalYellow,
+            ) {
+                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, "$name eins mehr", Modifier.size(30.dp)) }
             }
         }
+        androidx.compose.material3.HorizontalDivider(Modifier.padding(start = 20.dp), color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 

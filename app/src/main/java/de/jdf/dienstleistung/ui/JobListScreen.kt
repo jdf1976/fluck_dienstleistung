@@ -72,7 +72,7 @@ fun JobListScreen(onOpen: (Long) -> Unit, onNew: () -> Unit) {
             }
             SearchField(query, { query = it }, "Kunde, Ort, Auftrag …")
             Row(
-                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+                Modifier.horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 BigChip("Offen", filter == null && !showAll) { filter = null; showAll = false }
@@ -82,11 +82,8 @@ fun JobListScreen(onOpen: (Long) -> Unit, onNew: () -> Unit) {
             if (shown.isEmpty()) {
                 EmptyHint(if (jobs.isEmpty()) "Noch keine Aufträge.\nMit + einen neuen anlegen." else "Keine Treffer.")
             } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    items(shown, key = { it.job.id }) { JobCard(it) { onOpen(it.job.id) } }
+                LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                    items(shown, key = { it.job.id }) { JobRow(it) { onOpen(it.job.id) } }
                 }
             }
         }

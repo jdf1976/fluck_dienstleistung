@@ -40,6 +40,12 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -66,37 +72,39 @@ import java.util.Locale
 
 val Navy = Color(0xFF1B3352)
 val SignalYellow = Color(0xFFF5B400)
-private val Ground = Color(0xFFF4F6F9)
-private val Ink = Color(0xFF14202E)
-private val Muted = Color(0xFF4F5B6B)
 
+/** Variante C hell: weiß, feine Linien, Farbe nur für Status und Hauptaktion. */
 private val LightColors = lightColorScheme(
     primary = Navy, onPrimary = Color.White,
     primaryContainer = Color(0xFFDCE6F2), onPrimaryContainer = Navy,
     secondary = SignalYellow, onSecondary = Navy,
     secondaryContainer = Color(0xFFFFE8B3), onSecondaryContainer = Navy,
     tertiary = SignalYellow, onTertiary = Navy,
-    background = Ground, onBackground = Ink,
-    surface = Ground, onSurface = Ink,
-    surfaceVariant = Color(0xFFE6EAEF), onSurfaceVariant = Muted,
-    surfaceContainerLowest = Color.White, surfaceContainerLow = Color.White,
-    surfaceContainer = Color.White, surfaceContainerHigh = Color.White, surfaceContainerHighest = Color.White,
-    outline = Color(0xFFC9D2DD), outlineVariant = Color(0xFFE1E6EC),
+    background = Color.White, onBackground = Color(0xFF14202E),
+    surface = Color.White, onSurface = Color(0xFF14202E),
+    surfaceVariant = Color(0xFFEEF1F5), onSurfaceVariant = Color(0xFF5A6676),
+    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF7F8FA),
+    surfaceContainer = Color(0xFFF3F5F8), surfaceContainerHigh = Color.White, surfaceContainerHighest = Color(0xFFEEF1F5),
+    outline = Color(0xFFC9D2DD), outlineVariant = Color(0xFFE6EAEF),
 )
 
+/** Variante C dunkel: Nachtblau-Schwarz, gelbe Akzente. */
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFB7CBEA), onPrimary = Color(0xFF0F1A28),
-    primaryContainer = Color(0xFF24456E), onPrimaryContainer = Color.White,
+    primary = Color(0xFF9CC3F5), onPrimary = Color(0xFF0F151C),
+    primaryContainer = Navy, onPrimaryContainer = Color.White,
     secondary = SignalYellow, onSecondary = Navy,
-    secondaryContainer = Color(0xFF5C4400), onSecondaryContainer = Color(0xFFFFE8B3),
+    secondaryContainer = Color(0xFF3D2E00), onSecondaryContainer = Color(0xFFFFE08A),
     tertiary = SignalYellow, onTertiary = Navy,
-    background = Color(0xFF0F1A28), onBackground = Color(0xFFE8EDF3),
-    surface = Color(0xFF0F1A28), onSurface = Color(0xFFE8EDF3),
-    surfaceVariant = Color(0xFF26384D), onSurfaceVariant = Color(0xFFB5C0CE),
-    surfaceContainerLowest = Color(0xFF16222F), surfaceContainerLow = Color(0xFF16222F),
-    surfaceContainer = Color(0xFF16222F), surfaceContainerHigh = Color(0xFF1B2838), surfaceContainerHighest = Color(0xFF1B2838),
-    outline = Color(0xFF52627A), outlineVariant = Color(0xFF2C3D52),
+    background = Color(0xFF0F151C), onBackground = Color(0xFFEEF2F7),
+    surface = Color(0xFF0F151C), onSurface = Color(0xFFEEF2F7),
+    surfaceVariant = Color(0xFF202B38), onSurfaceVariant = Color(0xFF9AA8B8),
+    surfaceContainerLowest = Color(0xFF161E28), surfaceContainerLow = Color(0xFF161E28),
+    surfaceContainer = Color(0xFF1A2430), surfaceContainerHigh = Color(0xFF1A2430), surfaceContainerHighest = Color(0xFF202B38),
+    outline = Color(0xFF3A4859), outlineVariant = Color(0xFF243140),
 )
+
+/** true, wenn gerade das dunkle Design aktiv ist (manuell oder per System). */
+val LocalIsDark = staticCompositionLocalOf { false }
 
 private val Figtree = FontFamily(
     Font(R.font.figtree_regular, FontWeight.Normal),
@@ -127,12 +135,14 @@ private val AppTypography = Typography(
 )
 
 @Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
-        typography = AppTypography,
-        content = content,
-    )
+fun AppTheme(dark: Boolean, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalIsDark provides dark) {
+        MaterialTheme(
+            colorScheme = if (dark) DarkColors else LightColors,
+            typography = AppTypography,
+            content = content,
+        )
+    }
 }
 
 @Composable
@@ -178,8 +188,8 @@ fun AppCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(22.dp)
-    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+    val shape = RoundedCornerShape(18.dp)
+    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     if (onClick != null) Card(onClick = onClick, modifier = modifier, shape = shape, colors = colors, border = border, content = content)
     else Card(modifier = modifier, shape = shape, colors = colors, border = border, content = content)
@@ -198,7 +208,7 @@ fun BigButton(
     height: Dp = 64.dp,
     enabled: Boolean = true,
 ) {
-    val shape = RoundedCornerShape(if (height >= 60.dp) 20.dp else 16.dp)
+    val shape = RoundedCornerShape(if (height >= 60.dp) 16.dp else 14.dp)
     val content: @Composable () -> Unit = {
         if (icon != null) { Icon(icon, null, Modifier.size(24.dp)); Text("  ") }
         Text(text, style = if (height >= 60.dp) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge)
@@ -238,14 +248,24 @@ fun ConfirmDialog(title: String, text: String, onConfirm: () -> Unit, onDismiss:
 
 data class StatusLook(val fg: Color, val bg: Color, val icon: ImageVector)
 
-fun statusLook(s: JobStatus): StatusLook = when (s) {
-    JobStatus.REQUEST -> StatusLook(Color(0xFF3E4753), Color(0xFFE6EAEF), Icons.Default.Inbox)
-    JobStatus.PLANNED -> StatusLook(Color(0xFF0B4F9C), Color(0xFFDCEBFF), Icons.Default.Event)
-    JobStatus.IN_PROGRESS -> StatusLook(Color(0xFF7A4A00), Color(0xFFFFE8B3), Icons.Default.Bolt)
-    JobStatus.DONE -> StatusLook(Color(0xFF17602F), Color(0xFFD7F2DF), Icons.Default.Check)
-    JobStatus.INVOICED -> StatusLook(Color(0xFF55348F), Color(0xFFECE3FA), Icons.Default.Euro)
+@Composable
+fun statusLook(s: JobStatus): StatusLook {
+    val dark = LocalIsDark.current
+    return when (s) {
+        JobStatus.REQUEST -> if (dark) StatusLook(Color(0xFFB5C0CE), Color(0xFF26303C), Icons.Default.Inbox)
+            else StatusLook(Color(0xFF3E4753), Color(0xFFE6EAEF), Icons.Default.Inbox)
+        JobStatus.PLANNED -> if (dark) StatusLook(Color(0xFF8EC1FF), Color(0xFF13325A), Icons.Default.Event)
+            else StatusLook(Color(0xFF0B4F9C), Color(0xFFDCEBFF), Icons.Default.Event)
+        JobStatus.IN_PROGRESS -> if (dark) StatusLook(SignalYellow, Color(0xFF3D2E00), Icons.Default.Bolt)
+            else StatusLook(Color(0xFF7A4A00), Color(0xFFFFE8B3), Icons.Default.Bolt)
+        JobStatus.DONE -> if (dark) StatusLook(Color(0xFF7FD99A), Color(0xFF143D24), Icons.Default.Check)
+            else StatusLook(Color(0xFF17602F), Color(0xFFD7F2DF), Icons.Default.Check)
+        JobStatus.INVOICED -> if (dark) StatusLook(Color(0xFFC9B2F5), Color(0xFF2E2150), Icons.Default.Euro)
+            else StatusLook(Color(0xFF55348F), Color(0xFFECE3FA), Icons.Default.Euro)
+    }
 }
 
+@Composable
 fun statusColor(s: JobStatus): Color = statusLook(s).fg
 
 @Composable
@@ -274,6 +294,63 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier, onClic
 @Composable
 fun LiveDot(modifier: Modifier = Modifier) {
     Box(modifier.size(10.dp).background(SignalYellow, RoundedCornerShape(50)))
+}
+
+// ---- Listen-Bausteine (Variante C) ----
+
+/** Kleine Abschnittsüberschrift in Großbuchstaben. */
+@Composable
+fun SectionLabel(text: String, modifier: Modifier = Modifier, trailing: @Composable () -> Unit = {}) {
+    Row(modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 20.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(text.uppercase(Locale.GERMAN), style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+        trailing()
+    }
+}
+
+@Composable
+fun StatusDot(status: JobStatus, modifier: Modifier = Modifier) {
+    Box(modifier.size(10.dp).background(statusLook(status).fg, RoundedCornerShape(50)))
+}
+
+/** Listenzeile mit feiner Trennlinie, mindestens 60 dp hoch. */
+@Composable
+fun ListRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onClick: (() -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Column(modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            leading?.invoke()
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (!subtitle.isNullOrBlank()) Text(subtitle, style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            trailing?.invoke()
+        }
+        HorizontalDivider(Modifier.padding(start = 20.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+/** Auftrag als Listenzeile: Punkt in Statusfarbe, Titel, Kunde, Status rechts. */
+@Composable
+fun JobRow(item: de.jdf.dienstleistung.data.JobListItem, onClick: () -> Unit) {
+    val sub = listOfNotNull(item.customerName, item.job.location.ifBlank { null },
+        item.totalMinutes.takeIf { it > 0 }?.let { formatDuration(it) }).joinToString(" · ")
+    ListRow(
+        title = item.job.title, subtitle = sub.ifEmpty { "ohne Kunde" }, onClick = onClick,
+        leading = { StatusDot(item.job.status) },
+        trailing = {
+            Text(item.job.status.label, style = MaterialTheme.typography.labelMedium, color = statusLook(item.job.status).fg)
+        },
+    )
 }
 
 // ---- Formatierung ----

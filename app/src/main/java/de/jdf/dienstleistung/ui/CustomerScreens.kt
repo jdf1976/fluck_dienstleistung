@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -82,17 +83,19 @@ fun CustomerListScreen(onOpen: (Long) -> Unit, onNew: () -> Unit) {
                 EmptyHint(if (customers.isEmpty()) "Noch keine Kunden.\nMit + einen anlegen." else "Keine Treffer.")
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
                 ) {
                     items(shown, key = { it.id }) { c ->
-                        AppCard(Modifier.fillMaxWidth(), onClick = { onOpen(c.id) }) {
-                            Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
-                                Text(c.name, style = MaterialTheme.typography.titleMedium)
-                                if (c.address.isNotBlank()) Text(c.address, style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        ListRow(c.name, subtitle = c.address, onClick = { onOpen(c.id) }, leading = {
+                            Surface(shape = androidx.compose.foundation.shape.CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(40.dp)) {
+                                androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                    Text(c.name.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1).uppercase() },
+                                        style = MaterialTheme.typography.labelLarge)
+                                }
                             }
-                        }
+                        })
                     }
                 }
             }
@@ -163,7 +166,7 @@ fun CustomerDetailScreen(
                 }
             }
             item { Text("Aufträge (${jobs.size})", style = MaterialTheme.typography.titleLarge) }
-            items(jobs, key = { it.job.id }) { JobCard(it) { onOpenJob(it.job.id) } }
+            items(jobs, key = { it.job.id }) { JobRow(it) { onOpenJob(it.job.id) } }
         }
     }
 

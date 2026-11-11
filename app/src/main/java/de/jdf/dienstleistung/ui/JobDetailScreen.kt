@@ -49,6 +49,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -105,35 +114,33 @@ fun JobDetailScreen(
     val j = job
     Scaffold(
         topBar = {
-            BackTopBar("Auftrag", onBack) {
-                IconButton(onClick = { onEdit(jobId) }, Modifier.size(52.dp)) { Icon(Icons.Default.Edit, "Bearbeiten") }
-                IconButton(onClick = { confirmDelete = true }, Modifier.size(52.dp)) { Icon(Icons.Default.Delete, "Löschen") }
+            BackTopBar(if (tab == 0) "Auftrag" else tabs[tab], { if (tab == 0) onBack() else tab = 0 }) {
+                if (tab == 0) {
+                    IconButton(onClick = { onEdit(jobId) }, Modifier.size(52.dp)) { Icon(Icons.Default.Edit, "Bearbeiten") }
+                    IconButton(onClick = { confirmDelete = true }, Modifier.size(52.dp)) { Icon(Icons.Default.Delete, "Löschen") }
+                }
             }
         },
         bottomBar = {
-            Column {
-                if (timerHere && timer != null) {
-                    val now = rememberNow(true)
-                    Row(Modifier.fillMaxWidth().background(Navy).padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        LiveDot()
-                        Text("Timer läuft für diesen Auftrag", Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium, color = Color(0xFFC9D6E8))
-                        Text(formatStopwatch((now - timer.startedAt) / 1000), style = MaterialTheme.typography.titleMedium, color = Color.White)
+            Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val now = rememberNow(timerHere)
+                    Button(
+                        onClick = { if (timerHere) timerActions.stop() else timerActions.start(jobId) },
+                        modifier = Modifier.weight(1f).height(60.dp), shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy),
+                    ) {
+                        Icon(if (timerHere) Icons.Default.Stop else Icons.Default.PlayArrow, null)
+                        Text(
+                            if (timerHere && timer != null) " Stopp ${formatStopwatch((now - timer.startedAt) / 1000)}" else " Zeit starten",
+                            style = MaterialTheme.typography.titleSmall, maxLines = 1,
+                        )
                     }
-                }
-                Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 8.dp) {
-                    Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp, 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ActionButton("Foto", Icons.Default.PhotoCamera, BtnStyle.Primary, Modifier.weight(1f), takePhoto)
-                        ActionButton(if (timerHere) "Stopp" else "Zeit",
-                            if (timerHere) Icons.Default.Stop else Icons.Default.PlayArrow, BtnStyle.Dark, Modifier.weight(1f)) {
-                            if (timerHere) timerActions.stop() else timerActions.start(jobId)
-                        }
-                        ActionButton("Notiz", Icons.AutoMirrored.Filled.NoteAdd, BtnStyle.Outline, Modifier.weight(1f)) {
-                            editNote = Note(jobId = jobId, text = "")
-                        }
-                    }
+                    SquareAction(Icons.Default.PhotoCamera, "Foto", takePhoto)
+                    SquareAction(Icons.AutoMirrored.Filled.NoteAdd, "Notiz") { editNote = Note(jobId = jobId, text = "") }
+                    SquareAction(Icons.Default.Calculate, "Zählen") { onQuickCount(jobId) }
                 }
             }
         },
@@ -145,13 +152,8 @@ fun JobDetailScreen(
         },
     ) { pad ->
         if (j == null) return@Scaffold
+        androidx.activity.compose.BackHandler(enabled = tab != 0) { tab = 0 }
         Column(Modifier.padding(pad).fillMaxSize()) {
-            ScrollableTabRow(selectedTabIndex = tab, edgePadding = 12.dp, containerColor = MaterialTheme.colorScheme.background) {
-                tabs.forEachIndexed { i, t ->
-                    Tab(selected = tab == i, onClick = { tab = i },
-                        text = { Text(t, style = MaterialTheme.typography.labelLarge) })
-                }
-            }
             when (tab) {
                 0 -> OverviewTab(j, onOpenCustomer, onShowTab = { tab = it }, onEditNote = { editNote = it })
                 1 -> TimesTab(jobId) { editTime = it }
@@ -182,23 +184,15 @@ fun JobDetailScreen(
     )
 }
 
+/** Quadratischer Knopf mit Symbol in der unteren Leiste. */
 @Composable
-private fun ActionButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, style: BtnStyle,
-                         modifier: Modifier, onClick: () -> Unit) {
-    val (bg, fg) = when (style) {
-        BtnStyle.Primary -> SignalYellow to Navy
-        BtnStyle.Dark -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-        BtnStyle.Outline -> MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.primary
-    }
+private fun SquareAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     Surface(
-        onClick = onClick, modifier = modifier.height(68.dp), shape = RoundedCornerShape(20.dp),
-        color = bg, contentColor = fg,
-        border = if (style == BtnStyle.Outline) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        onClick = onClick, modifier = Modifier.size(60.dp), shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.primary,
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(icon, null, Modifier.size(26.dp))
-            Text(text, style = MaterialTheme.typography.labelLarge)
-        }
+        Box(contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(26.dp)) }
     }
 }
 
@@ -208,6 +202,11 @@ private fun Fab(text: String, onClick: () -> Unit) {
         text = { Text(text, style = MaterialTheme.typography.labelLarge) },
         containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)
 }
+
+private val shortStatus = mapOf(
+    JobStatus.REQUEST to "Anfrage", JobStatus.PLANNED to "Geplant", JobStatus.IN_PROGRESS to "In Arbeit",
+    JobStatus.DONE to "Erledigt", JobStatus.INVOICED to "Abgerech.",
+)
 
 @Composable
 private fun OverviewTab(job: Job, onOpenCustomer: (Long) -> Unit, onShowTab: (Int) -> Unit, onEditNote: (Note) -> Unit) {
@@ -221,120 +220,99 @@ private fun OverviewTab(job: Job, onOpenCustomer: (Long) -> Unit, onShowTab: (In
     val photos by remember(job.id) { db.attachments().forJob(job.id, AttachmentKind.PHOTO) }.collectAsState(initial = emptyList())
     val protocols by remember(job.id) { db.attachments().forJob(job.id, AttachmentKind.PROTOCOL) }.collectAsState(initial = emptyList())
     val notes by remember(job.id) { db.notes().forJob(job.id) }.collectAsState(initial = emptyList())
+    val place = job.location.ifBlank { customer?.address.orEmpty() }
 
-    Column(
-        Modifier.verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 14.dp)) {
             Text(job.title, style = MaterialTheme.typography.headlineMedium)
-            customer?.let {
-                Text(it.name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable { onOpenCustomer(it.id) })
-            }
+            val sub = listOfNotNull(customer?.name, place.ifBlank { null }).joinToString(" · ")
+            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Status – antippen zum Ändern", style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                JobStatus.entries.forEach { s ->
-                    val on = job.status == s
-                    val look = statusLook(s)
-                    Surface(
-                        onClick = { scope.launch { db.jobs().setStatus(job.id, s) } },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (on) look.bg else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = if (on) look.fg else MaterialTheme.colorScheme.onSurfaceVariant,
-                        border = BorderStroke(2.dp, if (on) look.fg else MaterialTheme.colorScheme.outline),
-                        modifier = Modifier.height(48.dp),
-                    ) {
-                        Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(look.icon, null, Modifier.size(18.dp))
-                            Text(s.label, style = MaterialTheme.typography.labelLarge)
-                        }
+        // Status als Schieberegler
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(52.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(14.dp)).padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            JobStatus.entries.forEach { s ->
+                val on = job.status == s
+                val look = statusLook(s)
+                Surface(
+                    onClick = { scope.launch { db.jobs().setStatus(job.id, s) } },
+                    modifier = Modifier.weight(1f).fillMaxHeight(), shape = RoundedCornerShape(11.dp),
+                    color = if (on) MaterialTheme.colorScheme.background else Color.Transparent,
+                    shadowElevation = if (on) 2.dp else 0.dp,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(shortStatus.getValue(s), style = MaterialTheme.typography.labelMedium, maxLines = 1,
+                            color = if (on) look.fg else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
-        }
-
-        val place = job.location.ifBlank { customer?.address.orEmpty() }
-        val phone = customer?.phone.orEmpty()
-        if (place.isNotBlank() || phone.isNotBlank()) {
-            AppCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    if (place.isNotBlank()) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Default.Place, null, tint = MaterialTheme.colorScheme.primary)
-                        Text(place, style = MaterialTheme.typography.bodyLarge)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (place.isNotBlank()) BigButton("Route", {
-                            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(place))))
-                        }, Modifier.weight(1f), icon = Icons.Default.Directions, style = BtnStyle.Outline, height = 52.dp)
-                        if (phone.isNotBlank()) BigButton("Anrufen", {
-                            ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
-                        }, Modifier.weight(1f), icon = Icons.Default.Call, style = BtnStyle.Outline, height = 52.dp)
-                    }
-                }
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile("Arbeitszeit", times.sumOf { it.netMinutes }.let { if (it > 0) formatDuration(it) else "–" },
-                Modifier.weight(1f)) { onShowTab(1) }
-            StatTile("Material", "${materials.size} Pos.", Modifier.weight(1f)) { onShowTab(3) }
-            StatTile("Fotos", photos.size.toString(), Modifier.weight(1f)) { onShowTab(4) }
         }
 
         if (job.description.isNotBlank()) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Beschreibung", style = MaterialTheme.typography.titleLarge)
-                Text(job.description, style = MaterialTheme.typography.bodyLarge)
-            }
+            Text(job.description, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp))
         }
+
+        SectionLabel("Auftrag")
+        OverviewRow(Icons.Default.Schedule, "Arbeitszeit",
+            times.sumOf { it.netMinutes }.let { if (it > 0) formatDuration(it) else "–" }) { onShowTab(1) }
+        OverviewRow(Icons.Default.Inventory2, "Material", "${materials.size} Pos.") { onShowTab(3) }
+        OverviewRow(Icons.Default.PhotoCamera, "Fotos", photos.size.toString()) { onShowTab(4) }
+        OverviewRow(Icons.Default.Description, "Prüfprotokolle", protocols.size.toString()) { onShowTab(5) }
+        OverviewRow(Icons.Default.EditNote, "Notizen", notes.size.toString()) { onShowTab(2) }
 
         if (photos.isNotEmpty()) {
-            SectionHeader("Fotos", "Alle ${photos.size}") { onShowTab(4) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                photos.take(3).forEach { p ->
+            Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                photos.take(4).forEach { p ->
                     AsyncImage(
-                        model = a.files.file(p.fileName), contentDescription = p.caption,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { onShowTab(4) },
+                        model = a.files.file(p.fileName), contentDescription = p.caption, contentScale = ContentScale.Crop,
+                        modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant).clickable { onShowTab(4) },
                     )
                 }
-                repeat(3 - photos.size.coerceAtMost(3)) { Box(Modifier.weight(1f)) }
+                repeat(4 - photos.size.coerceAtMost(4)) { Box(Modifier.weight(1f)) }
             }
         }
 
-        SectionHeader("Prüfprotokolle", if (protocols.isEmpty()) "Hinzufügen" else "Alle ${protocols.size}") { onShowTab(5) }
-        if (protocols.isEmpty()) {
-            Text("Noch keine Protokolle.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        protocols.take(3).forEach { p ->
-            AppCard(Modifier.fillMaxWidth(), onClick = { a.files.open(p) }) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFDECEC), contentColor = Color(0xFFB3261E),
-                        modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Default.PictureAsPdf, null, Modifier.padding(12.dp))
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(p.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Text(formatMillis(p.createdAt), style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
+        notes.firstOrNull()?.let { n ->
+            SectionLabel("Letzte Notiz")
+            Box(Modifier.padding(horizontal = 16.dp)) { NoteCard(n) { onEditNote(n) } }
         }
 
-        if (notes.isNotEmpty()) {
-            SectionHeader("Notizen", "Alle ${notes.size}") { onShowTab(2) }
-            notes.take(2).forEach { n -> NoteCard(n) { onEditNote(n) } }
+        if (customer != null || place.isNotBlank()) {
+            SectionLabel("Kunde")
+            customer?.let { c ->
+                ListRow(c.name, subtitle = c.phone.ifBlank { null }, onClick = { onOpenCustomer(c.id) },
+                    trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) })
+            }
+            Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (place.isNotBlank()) BigButton("Route", {
+                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(place))))
+                }, Modifier.weight(1f), icon = Icons.Default.Directions, style = BtnStyle.Outline, height = 52.dp)
+                val phone = customer?.phone.orEmpty()
+                if (phone.isNotBlank()) BigButton("Anrufen", {
+                    ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+                }, Modifier.weight(1f), icon = Icons.Default.Call, style = BtnStyle.Outline, height = 52.dp)
+            }
         }
     }
+}
+
+@Composable
+private fun OverviewRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, onClick: () -> Unit) {
+    ListRow(
+        title, onClick = onClick,
+        leading = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(value, style = MaterialTheme.typography.titleSmall)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+    )
 }
 
 @Composable
@@ -349,10 +327,14 @@ private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
 
 @Composable
 private fun NoteCard(n: Note, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(20.dp), color = Color(0xFFFFF8E1), contentColor = Color(0xFF14202E),
+    val dark = LocalIsDark.current
+    Surface(onClick = onClick, shape = RoundedCornerShape(16.dp),
+        color = if (dark) Color(0xFF2A2410) else Color(0xFFFFF8E1),
+        contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(formatMillis(n.createdAt), style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B5300))
+            Text(formatMillis(n.createdAt), style = MaterialTheme.typography.labelSmall,
+                color = if (dark) SignalYellow else Color(0xFF6B5300))
             Text(n.text, style = MaterialTheme.typography.bodyLarge)
         }
     }
