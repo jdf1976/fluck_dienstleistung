@@ -26,7 +26,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Edit
@@ -81,6 +84,7 @@ fun JobDetailScreen(
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onOpenCustomer: (Long) -> Unit,
+    onQuickCount: (Long) -> Unit,
 ) {
     val a = app()
     val db = a.db
@@ -152,7 +156,7 @@ fun JobDetailScreen(
                 0 -> OverviewTab(j, onOpenCustomer, onShowTab = { tab = it }, onEditNote = { editNote = it })
                 1 -> TimesTab(jobId) { editTime = it }
                 2 -> NotesTab(jobId) { editNote = it }
-                3 -> MaterialsTab(jobId) { editMaterial = it }
+                3 -> MaterialsTab(j, onQuickCount = { onQuickCount(jobId) }) { editMaterial = it }
                 4 -> AttachmentsTab(jobId, AttachmentKind.PHOTO)
                 5 -> AttachmentsTab(jobId, AttachmentKind.PROTOCOL)
             }
@@ -394,17 +398,42 @@ private fun NotesTab(jobId: Long, onEdit: (Note) -> Unit) {
 }
 
 @Composable
-private fun MaterialsTab(jobId: Long, onEdit: (Material) -> Unit) {
+private fun MaterialsTab(job: Job, onQuickCount: () -> Unit, onEdit: (Material) -> Unit) {
+    val jobId = job.id
     val db = app().db
+    val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var toDelete by remember { mutableStateOf<Material?>(null) }
     val mats by remember(jobId) { db.materials().forJob(jobId) }.collectAsState(initial = emptyList())
+    val customer by remember(job.customerId) { db.customers().byId(job.customerId ?: -1) }.collectAsState(initial = null)
+    val text = { materialListText(job, customer, mats) }
     LazyColumn(contentPadding = PaddingValues(20.dp, 16.dp, 20.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { MaterialQuickCount(jobId) }
+        item {
+            BigButton("Schnellzählung", onQuickCount, Modifier.fillMaxWidth(), icon = Icons.Default.Calculate)
+        }
         item {
             Text("Materialliste", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
-            if (mats.isEmpty()) Text("Noch keine Positionen. Über „+ Material“ einzeln erfassen.",
+            if (mats.isEmpty()) Text("Noch keine Positionen. Über die Schnellzählung oder „+ Material“ erfassen.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (mats.isNotEmpty()) item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                BigButton("Senden (WhatsApp, E-Mail …)", { shareText(ctx, "Materialliste – ${job.title}", text()) },
+                    Modifier.fillMaxWidth(), icon = Icons.Default.Share, style = BtnStyle.Dark, height = 56.dp)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BigButton("Kopieren", {
+                        copyToClipboard(ctx, "Materialliste", text())
+                        android.widget.Toast.makeText(ctx, "Materialliste kopiert", android.widget.Toast.LENGTH_SHORT).show()
+                    }, Modifier.weight(1f), icon = Icons.Default.ContentCopy, style = BtnStyle.Outline, height = 52.dp)
+                    BigButton("Als Notiz", {
+                        scope.launch {
+                            db.notes().upsert(Note(jobId = jobId, text = text().replace("*", "")))
+                            db.jobs().touch(jobId)
+                            android.widget.Toast.makeText(ctx, "Als Notiz gespeichert", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }, Modifier.weight(1f), icon = Icons.AutoMirrored.Filled.NoteAdd, style = BtnStyle.Outline, height = 52.dp)
+                }
+            }
         }
         items(mats, key = { it.id }) { m ->
             AppCard(Modifier.fillMaxWidth(), onClick = { onEdit(m) }) {

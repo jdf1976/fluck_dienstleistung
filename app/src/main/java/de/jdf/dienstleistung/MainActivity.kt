@@ -50,6 +50,7 @@ import de.jdf.dienstleistung.ui.JobDetailScreen
 import de.jdf.dienstleistung.ui.JobEditScreen
 import de.jdf.dienstleistung.ui.JobListScreen
 import de.jdf.dienstleistung.ui.MiniTimerBar
+import de.jdf.dienstleistung.ui.QuickCountScreen
 import de.jdf.dienstleistung.ui.SettingsScreen
 import de.jdf.dienstleistung.ui.TodayScreen
 import de.jdf.dienstleistung.ui.rememberTimerActions
@@ -153,7 +154,11 @@ private fun AppNav() {
                     onBack = { nav.popBackStack() },
                     onEdit = { nav.navigate("jobEdit/$it?customerId=0") },
                     onOpenCustomer = { nav.navigate("customer/$it") },
+                    onQuickCount = { nav.navigate("count/$it") },
                 )
+            }
+            composable("count/{id}", idArg) { e ->
+                QuickCountScreen(jobId = e.arguments!!.getLong("id"), onBack = { nav.popBackStack() })
             }
             composable(
                 "jobEdit/{id}?customerId={customerId}",
