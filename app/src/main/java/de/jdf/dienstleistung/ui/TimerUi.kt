@@ -100,7 +100,7 @@ fun rememberTimerActions(): TimerActions {
 @Composable
 fun MiniTimerBar(timer: RunningTimer, onOpen: () -> Unit, onStop: () -> Unit) {
     val now = rememberNow(true)
-    Surface(color = Navy, contentColor = Color.White) {
+    Surface(color = Dunkel, contentColor = Color.White) {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LiveDot()
@@ -110,7 +110,7 @@ fun MiniTimerBar(timer: RunningTimer, onOpen: () -> Unit, onStop: () -> Unit) {
                 Text(formatStopwatch((now - timer.startedAt) / 1000), style = MaterialTheme.typography.titleLarge)
             }
             Button(onClick = onStop, modifier = Modifier.height(48.dp), shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Navy)) {
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Dunkel)) {
                 Icon(Icons.Default.Stop, null); Text(" Stopp", style = MaterialTheme.typography.labelLarge)
             }
         }
@@ -144,7 +144,7 @@ fun JobPickerSheet(jobs: List<JobListItem>, onPick: (Long) -> Unit, onDismiss: (
                             Text(item.customerName ?: "ohne Kunde", style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Surface(shape = RoundedCornerShape(14.dp), color = SignalYellow, contentColor = Navy,
+                        Surface(shape = RoundedCornerShape(14.dp), color = Tuerkis, contentColor = AufTuerkis,
                             modifier = Modifier.size(48.dp)) {
                             Icon(Icons.Default.PlayArrow, "Starten", Modifier.padding(10.dp))
                         }

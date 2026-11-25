@@ -7,6 +7,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import de.jdf.dienstleistung.ui.Dunkel
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -79,11 +87,17 @@ class MainActivity : ComponentActivity() {
             val view = LocalView.current
             SideEffect {
                 WindowCompat.getInsetsController(window, view).apply {
-                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightStatusBars = false // Kopfbereich ist immer dunkel
                     isAppearanceLightNavigationBars = !dark
                 }
             }
-            AppTheme(dark) { AppNav() }
+            AppTheme(dark) {
+                Box(Modifier.fillMaxSize()) {
+                    AppNav()
+                    // Statusleiste dunkel hinterlegen – passt zum dunklen Kopfbereich (flucknetz-Design)
+                    Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(Dunkel))
+                }
+            }
         }
     }
 }
@@ -130,7 +144,7 @@ private fun AppNav() {
                     MiniTimerBar(timer, onOpen = { nav.switchTab(Tab.TODAY.route) }, onStop = timerActions.stop)
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest, tonalElevation = 0.dp) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.route,

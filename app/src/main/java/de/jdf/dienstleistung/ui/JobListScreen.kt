@@ -67,7 +67,7 @@ fun JobListScreen(onOpen: (Long) -> Unit, onNew: () -> Unit) {
             PageTitle("Aufträge") {
                 FilledIconButton(
                     onClick = onNew, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(18.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = SignalYellow, contentColor = Navy),
+                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = Tuerkis, contentColor = AufTuerkis),
                 ) { Icon(Icons.Default.Add, "Neuer Auftrag", Modifier.size(30.dp)) }
             }
             SearchField(query, { query = it }, "Kunde, Ort, Auftrag …")
@@ -98,11 +98,11 @@ fun SearchField(value: String, onChange: (String) -> Unit, placeholder: String) 
         placeholder = { Text(placeholder) }, singleLine = true,
         shape = RoundedCornerShape(18.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         ),
         textStyle = MaterialTheme.typography.bodyLarge,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp),
     )
 }
 

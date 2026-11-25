@@ -1,7 +1,11 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <!-- Blitz -->
-    <path android:fillColor="#FFC107"
-        android:pathData="M60,26 L38,58 L52,58 L46,82 L70,48 L56,48 Z" />
+    android:viewportWidth="180" android:viewportHeight="180">
+    <!-- flucknetz-Familie: weißes Haus, darin ein türkiser Blitz (Elektro-Aufträge) -->
+    <group android:translateX="30" android:translateY="28">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="7" android:strokeLineJoin="round"
+            android:pathData="M24,58 L60,26 L96,58 V98 H24 Z" />
+        <path android:fillColor="#2EC4B6"
+            android:pathData="M66,50 L44,78 L57,78 L52,94 L76,64 L63,64 Z" />
+    </group>
 </vector>

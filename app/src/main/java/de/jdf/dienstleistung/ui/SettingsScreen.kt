@@ -66,11 +66,12 @@ fun SettingsScreen() {
     }
 
     Scaffold { pad ->
+        Column(Modifier.padding(pad)) {
+        PageTitle("Mehr")
         Column(
-            Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.padding(top = 20.dp)) { Text("Mehr", style = MaterialTheme.typography.headlineLarge) }
 
             Text("Darstellung", style = MaterialTheme.typography.titleLarge)
             ThemeSwitch()
@@ -95,6 +96,7 @@ fun SettingsScreen() {
             Text("Info", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 16.dp))
             Text("Version ${BuildConfigInfo.versionName(ctx)}", style = MaterialTheme.typography.bodyMedium)
             Text("Alle Daten liegen nur lokal auf diesem Gerät. Regelmäßig sichern!", style = MaterialTheme.typography.bodySmall)
+        }
         }
     }
 

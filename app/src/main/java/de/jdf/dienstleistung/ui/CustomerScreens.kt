@@ -75,7 +75,7 @@ fun CustomerListScreen(onOpen: (Long) -> Unit, onNew: () -> Unit) {
                 androidx.compose.material3.FilledIconButton(
                     onClick = onNew, modifier = Modifier.size(56.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(containerColor = SignalYellow, contentColor = Navy),
+                    colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(containerColor = Tuerkis, contentColor = AufTuerkis),
                 ) { Icon(Icons.Default.Add, "Neuer Kunde", Modifier.size(30.dp)) }
             }
             SearchField(query, { query = it }, "Name, Ort, Telefon …")
@@ -131,7 +131,7 @@ fun CustomerDetailScreen(
                 onClick = { onNewJob(customerId) },
                 icon = { Icon(Icons.Default.Add, null) },
                 text = { Text("Auftrag", style = MaterialTheme.typography.labelLarge) },
-                containerColor = SignalYellow, contentColor = Navy,
+                containerColor = Tuerkis, contentColor = AufTuerkis,
             )
         },
     ) { pad ->

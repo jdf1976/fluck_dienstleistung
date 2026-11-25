@@ -130,7 +130,7 @@ fun JobDetailScreen(
                     Button(
                         onClick = { if (timerHere) timerActions.stop() else timerActions.start(jobId) },
                         modifier = Modifier.weight(1f).height(60.dp), shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy),
+                        colors = ButtonDefaults.buttonColors(containerColor = Tuerkis, contentColor = AufTuerkis),
                     ) {
                         Icon(if (timerHere) Icons.Default.Stop else Icons.Default.PlayArrow, null)
                         Text(
@@ -329,12 +329,12 @@ private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
 private fun NoteCard(n: Note, onClick: () -> Unit) {
     val dark = LocalIsDark.current
     Surface(onClick = onClick, shape = RoundedCornerShape(16.dp),
-        color = if (dark) Color(0xFF2A2410) else Color(0xFFFFF8E1),
+        color = if (dark) Color(0xFF0E3330) else Color(0xFFE2F7F5),
         contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(formatMillis(n.createdAt), style = MaterialTheme.typography.labelSmall,
-                color = if (dark) SignalYellow else Color(0xFF6B5300))
+                color = if (dark) Tuerkis else Color(0xFF0A7C72))
             Text(n.text, style = MaterialTheme.typography.bodyLarge)
         }
     }

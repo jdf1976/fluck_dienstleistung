@@ -247,8 +247,8 @@ private fun CountRow(name: String, count: Int, onPlus: () -> Unit, onMinus: () -
     val active = count > 0
     val dark = LocalIsDark.current
     Column(Modifier.fillMaxWidth().background(
-        if (!active) MaterialTheme.colorScheme.background else if (dark) androidx.compose.ui.graphics.Color(0xFF2A2410)
-        else androidx.compose.ui.graphics.Color(0xFFFFF8E1))) {
+        if (!active) MaterialTheme.colorScheme.background else if (dark) androidx.compose.ui.graphics.Color(0xFF0E3330)
+        else androidx.compose.ui.graphics.Color(0xFFE2F7F5))) {
         Row(Modifier.fillMaxWidth().height(68.dp).padding(start = 20.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -272,7 +272,7 @@ private fun CountRow(name: String, count: Int, onPlus: () -> Unit, onMinus: () -
             )
             Surface(
                 onClick = onPlus, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(14.dp),
-                color = Navy, contentColor = SignalYellow,
+                color = Dunkel, contentColor = Tuerkis,
             ) {
                 Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, "$name eins mehr", Modifier.size(30.dp)) }
             }

@@ -68,54 +68,49 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// ---- Farben (siehe Gestaltungsregeln) ----
+// ---- Farben: flucknetz-Design (wie die WLAN-Protokoll-App) ----
 
-val Navy = Color(0xFF1B3352)
-val SignalYellow = Color(0xFFF5B400)
+val Dunkel = Color(0xFF0F1E2E)
+val Petrol = Color(0xFF0E5A8A)
+val Tuerkis = Color(0xFF2EC4B6)
+val AufTuerkis = Color(0xFF06312D)
+val Hellgrau = Color(0xFFF2F4F7)
 
-/** Variante C hell: weiß, feine Linien, Farbe nur für Status und Hauptaktion. */
+/** Hell: hellgrauer Grund, weiße Karten, Petrol für Struktur, Türkis für die Hauptaktion. */
 private val LightColors = lightColorScheme(
-    primary = Navy, onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCE6F2), onPrimaryContainer = Navy,
-    secondary = SignalYellow, onSecondary = Navy,
-    secondaryContainer = Color(0xFFFFE8B3), onSecondaryContainer = Navy,
-    tertiary = SignalYellow, onTertiary = Navy,
-    background = Color.White, onBackground = Color(0xFF14202E),
-    surface = Color.White, onSurface = Color(0xFF14202E),
-    surfaceVariant = Color(0xFFEEF1F5), onSurfaceVariant = Color(0xFF5A6676),
-    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF7F8FA),
-    surfaceContainer = Color(0xFFF3F5F8), surfaceContainerHigh = Color.White, surfaceContainerHighest = Color(0xFFEEF1F5),
-    outline = Color(0xFFC9D2DD), outlineVariant = Color(0xFFE6EAEF),
+    primary = Petrol, onPrimary = Color.White,
+    primaryContainer = Color(0xFFD6E6F2), onPrimaryContainer = Dunkel,
+    secondary = Tuerkis, onSecondary = AufTuerkis,
+    secondaryContainer = Color(0xFFC8F0EC), onSecondaryContainer = AufTuerkis,
+    tertiary = Tuerkis, onTertiary = AufTuerkis,
+    background = Hellgrau, onBackground = Dunkel,
+    surface = Hellgrau, onSurface = Dunkel,
+    surfaceVariant = Color(0xFFE4E8EE), onSurfaceVariant = Color(0xFF5B6573),
+    surfaceContainerLowest = Color.White, surfaceContainerLow = Color.White,
+    surfaceContainer = Color.White, surfaceContainerHigh = Color.White, surfaceContainerHighest = Color(0xFFE4E8EE),
+    outline = Color(0xFFC9D2DD), outlineVariant = Color(0xFFDDE2E8),
 )
 
-/** Variante C dunkel: Nachtblau-Schwarz, gelbe Akzente. */
+/** Dunkel: flucknetz-Nachtblau, türkise Akzente. */
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF9CC3F5), onPrimary = Color(0xFF0F151C),
-    primaryContainer = Navy, onPrimaryContainer = Color.White,
-    secondary = SignalYellow, onSecondary = Navy,
-    secondaryContainer = Color(0xFF3D2E00), onSecondaryContainer = Color(0xFFFFE08A),
-    tertiary = SignalYellow, onTertiary = Navy,
-    background = Color(0xFF0F151C), onBackground = Color(0xFFEEF2F7),
-    surface = Color(0xFF0F151C), onSurface = Color(0xFFEEF2F7),
-    surfaceVariant = Color(0xFF202B38), onSurfaceVariant = Color(0xFF9AA8B8),
-    surfaceContainerLowest = Color(0xFF161E28), surfaceContainerLow = Color(0xFF161E28),
-    surfaceContainer = Color(0xFF1A2430), surfaceContainerHigh = Color(0xFF1A2430), surfaceContainerHighest = Color(0xFF202B38),
+    primary = Color(0xFF5FA8D8), onPrimary = Dunkel,
+    primaryContainer = Petrol, onPrimaryContainer = Color.White,
+    secondary = Tuerkis, onSecondary = AufTuerkis,
+    secondaryContainer = Color(0xFF0E3330), onSecondaryContainer = Color(0xFF9FE8E0),
+    tertiary = Tuerkis, onTertiary = AufTuerkis,
+    background = Dunkel, onBackground = Color(0xFFEEF2F7),
+    surface = Dunkel, onSurface = Color(0xFFEEF2F7),
+    surfaceVariant = Color(0xFF203549), onSurfaceVariant = Color(0xFF9AA8B8),
+    surfaceContainerLowest = Color(0xFF17293C), surfaceContainerLow = Color(0xFF17293C),
+    surfaceContainer = Color(0xFF17293C), surfaceContainerHigh = Color(0xFF17293C), surfaceContainerHighest = Color(0xFF203549),
     outline = Color(0xFF3A4859), outlineVariant = Color(0xFF243140),
 )
 
 /** true, wenn gerade das dunkle Design aktiv ist (manuell oder per System). */
 val LocalIsDark = staticCompositionLocalOf { false }
 
-private val Figtree = FontFamily(
-    Font(R.font.figtree_regular, FontWeight.Normal),
-    Font(R.font.figtree_medium, FontWeight.Medium),
-    Font(R.font.figtree_semibold, FontWeight.SemiBold),
-    Font(R.font.figtree_bold, FontWeight.Bold),
-    Font(R.font.figtree_extrabold, FontWeight.ExtraBold),
-)
-
 private fun style(size: Int, weight: FontWeight, line: Int = (size * 1.3).toInt()) =
-    TextStyle(fontFamily = Figtree, fontSize = size.sp, fontWeight = weight, lineHeight = line.sp)
+    TextStyle(fontFamily = FontFamily.Default, fontSize = size.sp, fontWeight = weight, lineHeight = line.sp)
 
 /** Größere Schrift als Android-Standard: draußen und mit Abstand gut lesbar. */
 private val AppTypography = Typography(
@@ -161,25 +156,48 @@ fun BackTopBar(title: String, onBack: () -> Unit, actions: @Composable () -> Uni
             }
         },
         actions = { actions() },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Dunkel, titleContentColor = Color.White,
+            navigationIconContentColor = Color.White, actionIconContentColor = Color.White,
+        ),
     )
 }
 
-/** Großer Seitentitel wie im Entwurf. */
+/**
+ * Dunkler Kopfbereich wie in der WLAN-Protokoll-App: Unterzeile türkis, Titel weiß,
+ * optional mit flucknetz-Logo und Inhalt rechts (z. B. „+“-Knopf).
+ */
 @Composable
-fun PageTitle(title: String, subtitle: String? = null, trailing: @Composable () -> Unit = {}) {
-    Row(
-        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(title, style = MaterialTheme.typography.headlineLarge)
+fun KopfBand(
+    title: String,
+    subtitle: String? = null,
+    logo: Boolean = false,
+    trailing: @Composable () -> Unit = {},
+) {
+    Surface(color = Dunkel, contentColor = Color.White, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (logo) {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(R.drawable.logo), null, Modifier.size(44.dp),
+                )
+                androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelMedium, color = Tuerkis)
+                Text(title, style = MaterialTheme.typography.headlineLarge, color = Color.White)
+            }
+            trailing()
         }
-        trailing()
     }
 }
+
+/** Großer Seitentitel – jetzt als dunkler Kopfbereich. */
+@Composable
+fun PageTitle(title: String, subtitle: String? = null, trailing: @Composable () -> Unit = {}) =
+    KopfBand(title, subtitle, logo = false, trailing = trailing)
 
 /** Weiße Karte mit feinem Rand. */
 @Composable
@@ -216,7 +234,7 @@ fun BigButton(
     val m = modifier.height(height)
     when (style) {
         BtnStyle.Primary -> Button(onClick, m, enabled, shape,
-            ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy)) { content() }
+            ButtonDefaults.buttonColors(containerColor = Tuerkis, contentColor = AufTuerkis)) { content() }
         BtnStyle.Dark -> Button(onClick, m, enabled, shape,
             ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary)) { content() }
@@ -256,7 +274,7 @@ fun statusLook(s: JobStatus): StatusLook {
             else StatusLook(Color(0xFF3E4753), Color(0xFFE6EAEF), Icons.Default.Inbox)
         JobStatus.PLANNED -> if (dark) StatusLook(Color(0xFF8EC1FF), Color(0xFF13325A), Icons.Default.Event)
             else StatusLook(Color(0xFF0B4F9C), Color(0xFFDCEBFF), Icons.Default.Event)
-        JobStatus.IN_PROGRESS -> if (dark) StatusLook(SignalYellow, Color(0xFF3D2E00), Icons.Default.Bolt)
+        JobStatus.IN_PROGRESS -> if (dark) StatusLook(Color(0xFFF5B400), Color(0xFF3D2E00), Icons.Default.Bolt)
             else StatusLook(Color(0xFF7A4A00), Color(0xFFFFE8B3), Icons.Default.Bolt)
         JobStatus.DONE -> if (dark) StatusLook(Color(0xFF7FD99A), Color(0xFF143D24), Icons.Default.Check)
             else StatusLook(Color(0xFF17602F), Color(0xFFD7F2DF), Icons.Default.Check)
@@ -293,7 +311,7 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier, onClic
 
 @Composable
 fun LiveDot(modifier: Modifier = Modifier) {
-    Box(modifier.size(10.dp).background(SignalYellow, RoundedCornerShape(50)))
+    Box(modifier.size(10.dp).background(Tuerkis, RoundedCornerShape(50)))
 }
 
 // ---- Listen-Bausteine (Variante C) ----

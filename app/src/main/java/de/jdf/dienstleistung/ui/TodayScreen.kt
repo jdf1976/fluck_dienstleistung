@@ -1,5 +1,6 @@
 package de.jdf.dienstleistung.ui
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -70,7 +71,7 @@ fun TodayScreen(onOpenJob: (Long) -> Unit, onShowJobs: () -> Unit, onNewJob: () 
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = onNewJob, containerColor = SignalYellow, contentColor = Navy,
+            FloatingActionButton(onClick = onNewJob, containerColor = Tuerkis, contentColor = AufTuerkis,
                 shape = RoundedCornerShape(20.dp), modifier = Modifier.size(64.dp)) {
                 Icon(Icons.Default.Add, "Neuer Auftrag", Modifier.size(30.dp))
             }
@@ -78,21 +79,18 @@ fun TodayScreen(onOpenJob: (Long) -> Unit, onShowJobs: () -> Unit, onNewJob: () 
     ) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 96.dp)) {
             item {
-                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp),
-                    verticalAlignment = Alignment.Bottom) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            today.format(DateTimeFormatter.ofPattern("EE, d. MMM", Locale.GERMAN)) +
-                                " · KW ${today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)}",
-                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text("Heute", style = MaterialTheme.typography.headlineLarge)
-                    }
+                KopfBand(
+                    title = "Heute",
+                    subtitle = today.format(DateTimeFormatter.ofPattern("EE, d. MMM", Locale.GERMAN)) +
+                        " · KW ${today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)}",
+                    logo = true,
+                ) {
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(formatDuration(weekMinutes), style = MaterialTheme.typography.titleLarge)
-                        Text("diese Woche", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(formatDuration(weekMinutes), style = MaterialTheme.typography.titleLarge, color = Color.White)
+                        Text("diese Woche", style = MaterialTheme.typography.labelSmall, color = Tuerkis)
                     }
                 }
+                Spacer(Modifier.height(10.dp))
             }
 
             item {
@@ -132,7 +130,7 @@ fun TodayScreen(onOpenJob: (Long) -> Unit, onShowJobs: () -> Unit, onNewJob: () 
 private fun TimerStrip(title: String, startedAt: Long, onOpen: () -> Unit, onStop: () -> Unit) {
     val now = rememberNow(true)
     Surface(
-        onClick = onOpen, shape = RoundedCornerShape(18.dp), color = Navy, contentColor = Color.White,
+        onClick = onOpen, shape = RoundedCornerShape(18.dp), color = Dunkel, contentColor = Color.White,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
     ) {
         Row(Modifier.padding(start = 18.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
@@ -144,7 +142,7 @@ private fun TimerStrip(title: String, startedAt: Long, onOpen: () -> Unit, onSto
                 Text(formatStopwatch((now - startedAt) / 1000), style = MaterialTheme.typography.headlineMedium)
             }
             Button(onClick = onStop, modifier = Modifier.height(56.dp), shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy)) {
+                colors = ButtonDefaults.buttonColors(containerColor = Tuerkis, contentColor = AufTuerkis)) {
                 Icon(Icons.Default.Stop, null); Text(" Stopp", style = MaterialTheme.typography.titleSmall)
             }
         }
@@ -166,7 +164,7 @@ private fun IdleStrip(suggested: JobListItem, onStart: () -> Unit, onOther: () -
                     Text(suggested.job.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
                 Button(onClick = onStart, modifier = Modifier.height(56.dp), shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = SignalYellow, contentColor = Navy)) {
+                    colors = ButtonDefaults.buttonColors(containerColor = Tuerkis, contentColor = AufTuerkis)) {
                     Icon(Icons.Default.PlayArrow, null); Text(" Start", style = MaterialTheme.typography.titleSmall)
                 }
             }
